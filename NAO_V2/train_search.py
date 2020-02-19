@@ -125,11 +125,11 @@ def build_cifar10(model_state_dict=None, optimizer_state_dict=None, **kwargs):
     train_queue = torch.utils.data.DataLoader(
         train_data, batch_size=args.child_batch_size,
         sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[:split]),
-        pin_memory=True, num_workers=16)
+        pin_memory=True, num_workers=0)
     valid_queue = torch.utils.data.DataLoader(
         valid_data, batch_size=args.child_eval_batch_size,
         sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[split:num_train]),
-        pin_memory=True, num_workers=16)
+        pin_memory=True, num_workers=0)
     
     model = NASWSNetworkCIFAR(args, 10, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob, args.child_drop_path_keep_prob,
                        args.child_use_aux_head, args.steps)
@@ -168,11 +168,11 @@ def build_cifar100(model_state_dict=None, optimizer_state_dict=None, **kwargs):
     train_queue = torch.utils.data.DataLoader(
         train_data, batch_size=args.child_batch_size,
         sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[:split]),
-        pin_memory=True, num_workers=16)
+        pin_memory=True, num_workers=0)
     valid_queue = torch.utils.data.DataLoader(
         valid_data, batch_size=args.child_eval_batch_size,
         sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[split:num_train]),
-        pin_memory=True, num_workers=16)
+        pin_memory=True, num_workers=0)
     
     model = NASWSNetworkCIFAR(args, 100, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob, args.child_drop_path_keep_prob,
                        args.child_use_aux_head, args.steps)
@@ -222,7 +222,7 @@ def build_imagenet(model_state_dict, optimizer_state_dict, **kwargs):
             train_data = utils.ZipDataset(traindir, train_transform)
         else:
             logging.info('Loading data into memory')
-            train_data = utils.InMemoryZipDataset(traindir, train_transform, num_workers=32)
+            train_data = utils.InMemoryZipDataset(traindir, train_transform, num_workers=1)
     else:
         logging.info('Loading data from directory')
         traindir = os.path.join(args.data, 'train')
@@ -230,7 +230,7 @@ def build_imagenet(model_state_dict, optimizer_state_dict, **kwargs):
             train_data = dset.ImageFolder(traindir, train_transform)
         else:
             logging.info('Loading data into memory')
-            train_data = utils.InMemoryDataset(traindir, train_transform, num_workers=32)
+            train_data = utils.InMemoryDataset(traindir, train_transform, num_workers=1)
        
     num_train = len(train_data)
     indices = list(range(num_train))
@@ -242,11 +242,11 @@ def build_imagenet(model_state_dict, optimizer_state_dict, **kwargs):
     train_queue = torch.utils.data.DataLoader(
         train_data, batch_size=args.child_batch_size,
         sampler=torch.utils.data.sampler.SubsetRandomSampler(train_indices),
-        pin_memory=True, num_workers=16)
+        pin_memory=True, num_workers=0)
     valid_queue = torch.utils.data.DataLoader(
         train_data, batch_size=args.child_eval_batch_size,
         sampler=torch.utils.data.sampler.SubsetRandomSampler(valid_indices),
-        pin_memory=True, num_workers=16)
+        pin_memory=True, num_workers=0)
     
     model = NASWSNetworkImageNet(args, 1000, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob,
                        args.child_drop_path_keep_prob, args.child_use_aux_head, args.steps)
