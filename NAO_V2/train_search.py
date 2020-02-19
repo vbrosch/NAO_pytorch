@@ -81,7 +81,7 @@ utils.create_exp_dir(args.output_dir, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
-    format=log_format, datefmt='%m/%d %I:%M:%S %p')
+                    format=log_format, datefmt='%m/%d %I:%M:%S %p')
 
 
 class CrossEntropyLabelSmooth(nn.Module):
@@ -107,7 +107,7 @@ def get_builder(dataset):
         return build_cifar100
     else:
         return build_imagenet
-    
+
 
 def build_cifar10(model_state_dict=None, optimizer_state_dict=None, **kwargs):
     epoch = kwargs.pop('epoch')
@@ -118,7 +118,7 @@ def build_cifar10(model_state_dict=None, optimizer_state_dict=None, **kwargs):
 
     num_train = len(train_data)
     assert num_train == len(valid_data)
-    indices = list(range(num_train))    
+    indices = list(range(num_train))
     split = int(np.floor(ratio * num_train))
     np.random.shuffle(indices)
 
@@ -130,9 +130,10 @@ def build_cifar10(model_state_dict=None, optimizer_state_dict=None, **kwargs):
         valid_data, batch_size=args.child_eval_batch_size,
         sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[split:num_train]),
         pin_memory=True, num_workers=0)
-    
-    model = NASWSNetworkCIFAR(args, 10, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob, args.child_drop_path_keep_prob,
-                       args.child_use_aux_head, args.steps)
+
+    model = NASWSNetworkCIFAR(args, 10, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob,
+                              args.child_drop_path_keep_prob,
+                              args.child_use_aux_head, args.steps)
     model = model.cuda()
     train_criterion = nn.CrossEntropyLoss().cuda()
     eval_criterion = nn.CrossEntropyLoss().cuda()
@@ -161,7 +162,7 @@ def build_cifar100(model_state_dict=None, optimizer_state_dict=None, **kwargs):
 
     num_train = len(train_data)
     assert num_train == len(valid_data)
-    indices = list(range(num_train))    
+    indices = list(range(num_train))
     split = int(np.floor(ratio * num_train))
     np.random.shuffle(indices)
 
@@ -173,9 +174,10 @@ def build_cifar100(model_state_dict=None, optimizer_state_dict=None, **kwargs):
         valid_data, batch_size=args.child_eval_batch_size,
         sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[split:num_train]),
         pin_memory=True, num_workers=0)
-    
-    model = NASWSNetworkCIFAR(args, 100, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob, args.child_drop_path_keep_prob,
-                       args.child_use_aux_head, args.steps)
+
+    model = NASWSNetworkCIFAR(args, 100, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob,
+                              args.child_drop_path_keep_prob,
+                              args.child_use_aux_head, args.steps)
     model = model.cuda()
     train_criterion = nn.CrossEntropyLoss().cuda()
     eval_criterion = nn.CrossEntropyLoss().cuda()
@@ -231,7 +233,7 @@ def build_imagenet(model_state_dict, optimizer_state_dict, **kwargs):
         else:
             logging.info('Loading data into memory')
             train_data = utils.InMemoryDataset(traindir, train_transform, num_workers=1)
-       
+
     num_train = len(train_data)
     indices = list(range(num_train))
     np.random.shuffle(indices)
@@ -247,9 +249,10 @@ def build_imagenet(model_state_dict, optimizer_state_dict, **kwargs):
         train_data, batch_size=args.child_eval_batch_size,
         sampler=torch.utils.data.sampler.SubsetRandomSampler(valid_indices),
         pin_memory=True, num_workers=0)
-    
-    model = NASWSNetworkImageNet(args, 1000, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob,
-                       args.child_drop_path_keep_prob, args.child_use_aux_head, args.steps)
+
+    model = NASWSNetworkImageNet(args, 1000, args.child_layers, args.child_nodes, args.child_channels,
+                                 args.child_keep_prob,
+                                 args.child_drop_path_keep_prob, args.child_use_aux_head, args.steps)
     model = model.cuda()
     train_criterion = CrossEntropyLabelSmooth(1000, args.child_label_smooth).cuda()
     eval_criterion = nn.CrossEntropyLoss().cuda()
@@ -298,15 +301,15 @@ def child_train(train_queue, model, optimizer, global_step, arch_pool, arch_pool
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), args.child_grad_bound)
         optimizer.step()
-        
+
         prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
         n = input.size(0)
         objs.update(loss.data, n)
         top1.update(prec1.data, n)
         top5.update(prec5.data, n)
-        
-        if (step+1) % 100 == 0:
-            logging.info('Train %03d loss %e top1 %f top5 %f', step+1, objs.avg, top1.avg, top5.avg)
+
+        if (step + 1) % 100 == 0:
+            logging.info('Train %03d loss %e top1 %f top5 %f', step + 1, objs.avg, top1.avg, top5.avg)
             logging.info('Arch: %s', ' '.join(map(str, arch[0] + arch[1])))
 
     return top1.avg, objs.avg, global_step
@@ -321,16 +324,17 @@ def child_valid(valid_queue, model, arch_pool, criterion):
             inputs, targets = next(iter(valid_queue))
             inputs = inputs.cuda()
             targets = targets.cuda()
-                
+
             logits, _ = model(inputs, arch, bn_train=True)
             loss = criterion(logits, targets)
-                
+
             prec1, prec5 = utils.accuracy(logits, targets, topk=(1, 5))
-            valid_acc_list.append(prec1.data/100)
-            
-            if (i+1) % 100 == 0:
-                logging.info('Valid arch %s\n loss %.2f top1 %f top5 %f', ' '.join(map(str, arch[0] + arch[1])), loss, prec1, prec5)
-        
+            valid_acc_list.append(prec1.data / 100)
+
+            if (i + 1) % 100 == 0:
+                logging.info('Valid arch %s\n loss %.2f top1 %f top5 %f', ' '.join(map(str, arch[0] + arch[1])), loss,
+                             prec1, prec5)
+
     return valid_acc_list
 
 
@@ -345,9 +349,9 @@ def train_and_evaluate_top_on_cifar10(archs, train_queue, valid_queue):
         objs.reset()
         top1.reset()
         top5.reset()
-        logging.info('Train and evaluate the {} arch'.format(i+1))
+        logging.info('Train and evaluate the {} arch'.format(i + 1))
         model = NASNetworkCIFAR(args, 10, args.child_layers, args.child_nodes, args.child_channels, 0.6, 0.8,
-                        True, args.steps, arch)
+                                True, args.steps, arch)
         model = model.cuda()
         model.train()
         optimizer = torch.optim.SGD(
@@ -375,15 +379,16 @@ def train_and_evaluate_top_on_cifar10(archs, train_queue, valid_queue):
                 loss.backward()
                 nn.utils.clip_grad_norm_(model.parameters(), args.child_grad_bound)
                 optimizer.step()
-            
+
                 prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
                 n = input.size(0)
                 objs.update(loss.data, n)
                 top1.update(prec1.data, n)
                 top5.update(prec5.data, n)
-            
-                if (step+1) % 100 == 0:
-                    logging.info('Train epoch %03d %03d loss %e top1 %f top5 %f', e+1, step+1, objs.avg, top1.avg, top5.avg)
+
+                if (step + 1) % 100 == 0:
+                    logging.info('Train epoch %03d %03d loss %e top1 %f top5 %f', e + 1, step + 1, objs.avg, top1.avg,
+                                 top5.avg)
         objs.reset()
         top1.reset()
         top5.reset()
@@ -392,18 +397,18 @@ def train_and_evaluate_top_on_cifar10(archs, train_queue, valid_queue):
             for step, (input, target) in enumerate(valid_queue):
                 input = input.cuda()
                 target = target.cuda()
-            
+
                 logits, _ = model(input)
                 loss = eval_criterion(logits, target)
-            
+
                 prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
                 n = input.size(0)
                 objs.update(loss.data, n)
                 top1.update(prec1.data, n)
                 top5.update(prec5.data, n)
-            
-                if (step+1) % 100 == 0:
-                    logging.info('valid %03d %e %f %f', step+1, objs.avg, top1.avg, top5.avg)
+
+                if (step + 1) % 100 == 0:
+                    logging.info('valid %03d %e %f %f', step + 1, objs.avg, top1.avg, top5.avg)
         res.append(top1.avg)
     return res
 
@@ -419,9 +424,9 @@ def train_and_evaluate_top_on_cifar100(archs, train_queue, valid_queue):
         objs.reset()
         top1.reset()
         top5.reset()
-        logging.info('Train and evaluate the {} arch'.format(i+1))
+        logging.info('Train and evaluate the {} arch'.format(i + 1))
         model = NASNetworkCIFAR(args, 100, args.child_layers, args.child_nodes, args.child_channels, 0.6, 0.8,
-                        True, args.steps, arch)
+                                True, args.steps, arch)
         model = model.cuda()
         model.train()
         optimizer = torch.optim.SGD(
@@ -449,15 +454,16 @@ def train_and_evaluate_top_on_cifar100(archs, train_queue, valid_queue):
                 loss.backward()
                 nn.utils.clip_grad_norm_(model.parameters(), args.child_grad_bound)
                 optimizer.step()
-            
+
                 prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
                 n = input.size(0)
                 objs.update(loss.data, n)
                 top1.update(prec1.data, n)
                 top5.update(prec5.data, n)
-            
-                if (step+1) % 100 == 0:
-                    logging.info('Train %3d %03d loss %e top1 %f top5 %f', e+1, step+1, objs.avg, top1.avg, top5.avg)
+
+                if (step + 1) % 100 == 0:
+                    logging.info('Train %3d %03d loss %e top1 %f top5 %f', e + 1, step + 1, objs.avg, top1.avg,
+                                 top5.avg)
         objs.reset()
         top1.reset()
         top5.reset()
@@ -466,18 +472,18 @@ def train_and_evaluate_top_on_cifar100(archs, train_queue, valid_queue):
             for step, (input, target) in enumerate(valid_queue):
                 input = input.cuda()
                 target = target.cuda()
-            
+
                 logits, _ = model(input)
                 loss = eval_criterion(logits, target)
-            
+
                 prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
                 n = input.size(0)
                 objs.update(loss.data, n)
                 top1.update(prec1.data, n)
                 top5.update(prec5.data, n)
-            
-                if (step+1) % 100 == 0:
-                    logging.info('valid %03d %e %f %f', step+1, objs.avg, top1.avg, top5.avg)
+
+                if (step + 1) % 100 == 0:
+                    logging.info('valid %03d %e %f %f', step + 1, objs.avg, top1.avg, top5.avg)
         res.append(top1.avg)
     return res
 
@@ -493,9 +499,9 @@ def train_and_evaluate_top_on_imagenet(archs, train_queue, valid_queue):
         objs.reset()
         top1.reset()
         top5.reset()
-        logging.info('Train and evaluate the {} arch'.format(i+1))
+        logging.info('Train and evaluate the {} arch'.format(i + 1))
         model = NASNetworkImageNet(args, 1000, args.child_layers, args.child_nodes, args.child_channels, 1.0, 1.0,
-                        True, args.steps, arch)
+                                   True, args.steps, arch)
         model = model.cuda()
         model.train()
         optimizer = torch.optim.SGD(
@@ -518,16 +524,16 @@ def train_and_evaluate_top_on_imagenet(archs, train_queue, valid_queue):
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), args.child_grad_bound)
             optimizer.step()
-            
+
             prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
             n = input.size(0)
             objs.update(loss.data, n)
             top1.update(prec1.data, n)
             top5.update(prec5.data, n)
-            
-            if (step+1) % 100 == 0:
-                logging.info('Train %03d loss %e top1 %f top5 %f', step+1, objs.avg, top1.avg, top5.avg)
-            if step+1 == 500:
+
+            if (step + 1) % 100 == 0:
+                logging.info('Train %03d loss %e top1 %f top5 %f', step + 1, objs.avg, top1.avg, top5.avg)
+            if step + 1 == 500:
                 break
 
         objs.reset()
@@ -538,18 +544,18 @@ def train_and_evaluate_top_on_imagenet(archs, train_queue, valid_queue):
             for step, (input, target) in enumerate(valid_queue):
                 input = input.cuda()
                 target = target.cuda()
-            
+
                 logits, _ = model(input)
                 loss = eval_criterion(logits, target)
-            
+
                 prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
                 n = input.size(0)
                 objs.update(loss.data, n)
                 top1.update(prec1.data, n)
                 top5.update(prec5.data, n)
-            
-                if (step+1) % 100 == 0:
-                    logging.info('valid %03d %e %f %f', step+1, objs.avg, top1.avg, top5.avg)
+
+                if (step + 1) % 100 == 0:
+                    logging.info('valid %03d %e %f %f', step + 1, objs.avg, top1.avg, top5.avg)
         res.append(top1.avg)
     return res
 
@@ -564,12 +570,12 @@ def nao_train(train_queue, model, optimizer):
         encoder_target = sample['encoder_target']
         decoder_input = sample['decoder_input']
         decoder_target = sample['decoder_target']
-        
+
         encoder_input = encoder_input.cuda()
         encoder_target = encoder_target.cuda().requires_grad_()
         decoder_input = decoder_input.cuda()
         decoder_target = decoder_target.cuda()
-        
+
         optimizer.zero_grad()
         predict_value, log_prob, arch = model(encoder_input, decoder_input)
         loss_1 = F.mse_loss(predict_value.squeeze(), encoder_target.squeeze())
@@ -578,12 +584,12 @@ def nao_train(train_queue, model, optimizer):
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), args.controller_grad_bound)
         optimizer.step()
-        
+
         n = encoder_input.size(0)
         objs.update(loss.data, n)
         mse.update(loss_1.data, n)
         nll.update(loss_2.data, n)
-        
+
     return objs.avg, mse.avg, nll.avg
 
 
@@ -598,11 +604,11 @@ def nao_valid(queue, model):
             encoder_input = sample['encoder_input']
             encoder_target = sample['encoder_target']
             decoder_target = sample['decoder_target']
-            
+
             encoder_input = encoder_input.cuda()
             encoder_target = encoder_target.cuda()
             decoder_target = decoder_target.cuda()
-            
+
             predict_value, logits, arch = model(encoder_input)
             n = encoder_input.size(0)
             inputs += encoder_input.data.squeeze().tolist()
@@ -630,7 +636,7 @@ def main():
     if not torch.cuda.is_available():
         logging.info('no gpu device available')
         sys.exit(1)
-        
+
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -646,18 +652,18 @@ def main():
         args.num_class = 100
     else:
         args.num_class = 10
-    
+
     if args.search_space == 'small':
         OPERATIONS = OPERATIONS_search_small
     elif args.search_space == 'middle':
         OPERATIONS = OPERATIONS_search_middle
     args.child_num_ops = len(OPERATIONS)
-    args.controller_encoder_vocab_size = 1 + ( args.child_nodes + 2 - 1 ) + args.child_num_ops
+    args.controller_encoder_vocab_size = 1 + (args.child_nodes + 2 - 1) + args.child_num_ops
     args.controller_decoder_vocab_size = args.controller_encoder_vocab_size
     args.steps = int(np.ceil(45000 / args.child_batch_size)) * args.child_epochs
 
     logging.info("args = %s", args)
-    
+
     if args.child_arch_pool is not None:
         logging.info('Architecture pool is provided, loading')
         with open(args.child_arch_pool) as f:
@@ -674,7 +680,8 @@ def main():
         child_arch_pool = None
 
     build_fn = get_builder(args.dataset)
-    train_queue, valid_queue, model, train_criterion, eval_criterion, optimizer, scheduler = build_fn(ratio=0.9, epoch=-1)
+    train_queue, valid_queue, model, train_criterion, eval_criterion, optimizer, scheduler = build_fn(ratio=0.9,
+                                                                                                      epoch=-1)
 
     nao = NAO(
         args.controller_encoder_layers,
@@ -696,10 +703,10 @@ def main():
     nao = nao.cuda()
     logging.info("Encoder-Predictor-Decoder param size = %fMB", utils.count_parameters_in_MB(nao))
 
-    
     if child_arch_pool is None:
         logging.info('Architecture pool is not provided, randomly generating now')
-        child_arch_pool = utils.generate_arch(args.controller_seed_arch, args.child_nodes, args.child_num_ops)  # [[[conv],[reduc]]]
+        child_arch_pool = utils.generate_arch(args.controller_seed_arch, args.child_nodes,
+                                              args.child_num_ops)  # [[[conv],[reduc]]]
     arch_pool = []
     arch_pool_valid_acc = []
     for i in range(4):
@@ -708,17 +715,21 @@ def main():
         child_arch_pool_prob = []
         for arch in child_arch_pool:
             if args.dataset == 'cifar10':
-                tmp_model = NASNetworkCIFAR(args, args.num_class, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob, args.child_drop_path_keep_prob,
-                    args.child_use_aux_head, args.steps, arch)
+                tmp_model = NASNetworkCIFAR(args, args.num_class, args.child_layers, args.child_nodes,
+                                            args.child_channels, args.child_keep_prob, args.child_drop_path_keep_prob,
+                                            args.child_use_aux_head, args.steps, arch)
             elif args.dataset == 'cifar100':
-                tmp_model = NASNetworkCIFAR(args, args.num_class, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob, args.child_drop_path_keep_prob,
-                    args.child_use_aux_head, args.steps, arch)
+                tmp_model = NASNetworkCIFAR(args, args.num_class, args.child_layers, args.child_nodes,
+                                            args.child_channels, args.child_keep_prob, args.child_drop_path_keep_prob,
+                                            args.child_use_aux_head, args.steps, arch)
             else:
-                tmp_model = NASNetworkImageNet(args, args.num_class, args.child_layers, args.child_nodes, args.child_channels, args.child_keep_prob,
-                    args.child_drop_path_keep_prob, args.child_use_aux_head, args.steps, arch)
+                tmp_model = NASNetworkImageNet(args, args.num_class, args.child_layers, args.child_nodes,
+                                               args.child_channels, args.child_keep_prob,
+                                               args.child_drop_path_keep_prob, args.child_use_aux_head, args.steps,
+                                               arch)
             child_arch_pool_prob.append(utils.count_parameters_in_MB(tmp_model))
             del tmp_model
-        
+
         step = 0
         scheduler = get_scheduler(optimizer, args.dataset)
         for epoch in range(1, args.child_epochs + 1):
@@ -726,7 +737,8 @@ def main():
             lr = scheduler.get_lr()[0]
             logging.info('epoch %d lr %e', epoch, lr)
             # sample an arch to train
-            train_acc, train_obj, step = child_train(train_queue, model, optimizer, step, child_arch_pool, child_arch_pool_prob, train_criterion)
+            train_acc, train_obj, step = child_train(train_queue, model, optimizer, step, child_arch_pool,
+                                                     child_arch_pool_prob, train_criterion)
             logging.info('train_acc %f', train_acc)
 
         logging.info("Evaluate seed archs")
@@ -744,10 +756,12 @@ def main():
                     fp.write('{}\n'.format(perf))
         if i == 3:
             break
-                            
+
         # Train Encoder-Predictor-Decoder
         logging.info('Train Encoder-Predictor-Decoder')
-        encoder_input = list(map(lambda x: utils.parse_arch_to_seq(x[0]) + utils.parse_arch_to_seq(x[1]), arch_pool))
+        encoder_input = list(map(
+            lambda x: utils.parse_arch_to_seq(x[0], args.child_nodes) + utils.parse_arch_to_seq(x[1], args.child_nodes),
+            arch_pool))
         # [[conv, reduc]]
         min_val = min(arch_pool_valid_acc)
         max_val = max(arch_pool_valid_acc)
@@ -757,21 +771,21 @@ def main():
             dataset = list(zip(encoder_input, encoder_target))
             n = len(dataset)
             ratio = 0.9
-            split = int(n*ratio)
+            split = int(n * ratio)
             np.random.shuffle(dataset)
             encoder_input, encoder_target = list(zip(*dataset))
             train_encoder_input = list(encoder_input[:split])
             train_encoder_target = list(encoder_target[:split])
             valid_encoder_input = list(encoder_input[split:])
             valid_encoder_target = list(encoder_target[split:])
-            for _ in range(args.controller_expand-1):
+            for _ in range(args.controller_expand - 1):
                 for src, tgt in zip(encoder_input[:split], encoder_target[:split]):
                     a = np.random.randint(0, args.child_nodes)
                     b = np.random.randint(0, args.child_nodes)
                     src = src[:4 * a] + src[4 * a + 2:4 * a + 4] + \
-                            src[4 * a:4 * a + 2] + src[4 * (a + 1):20 + 4 * b] + \
-                            src[20 + 4 * b + 2:20 + 4 * b + 4] + src[20 + 4 * b:20 + 4 * b + 2] + \
-                            src[20 + 4 * (b + 1):]
+                          src[4 * a:4 * a + 2] + src[4 * (a + 1):20 + 4 * b] + \
+                          src[20 + 4 * b + 2:20 + 4 * b + 4] + src[20 + 4 * b:20 + 4 * b + 2] + \
+                          src[20 + 4 * (b + 1):]
                     train_encoder_input.append(src)
                     train_encoder_target.append(tgt)
         else:
@@ -781,14 +795,15 @@ def main():
             valid_encoder_target = encoder_target
         logging.info('Train data: {}\tValid data: {}'.format(len(train_encoder_input), len(valid_encoder_input)))
 
-        nao_train_dataset = utils.NAODataset(train_encoder_input, train_encoder_target, True, swap=True if args.controller_expand is None else False)
+        nao_train_dataset = utils.NAODataset(train_encoder_input, train_encoder_target, True,
+                                             swap=True if args.controller_expand is None else False)
         nao_valid_dataset = utils.NAODataset(valid_encoder_input, valid_encoder_target, False)
         nao_train_queue = torch.utils.data.DataLoader(
             nao_train_dataset, batch_size=args.controller_batch_size, shuffle=True, pin_memory=True)
         nao_valid_queue = torch.utils.data.DataLoader(
             nao_valid_dataset, batch_size=args.controller_batch_size, shuffle=False, pin_memory=True)
         nao_optimizer = torch.optim.Adam(nao.parameters(), lr=args.controller_lr, weight_decay=args.controller_l2_reg)
-        for nao_epoch in range(1, args.controller_epochs+1):
+        for nao_epoch in range(1, args.controller_epochs + 1):
             nao_loss, nao_mse, nao_ce = nao_train(nao_train_queue, nao, nao_optimizer)
             logging.info("epoch %04d train loss %.6f mse %.6f ce %.6f", nao_epoch, nao_loss, nao_mse, nao_ce)
             if nao_epoch % 100 == 0:
@@ -800,7 +815,8 @@ def main():
         new_archs = []
         max_step_size = 50
         predict_step_size = 0
-        top100_archs = list(map(lambda x: utils.parse_arch_to_seq(x[0]) + utils.parse_arch_to_seq(x[1]), arch_pool[:100]))
+        top100_archs = list(
+            map(lambda x: utils.parse_arch_to_seq(x[0]) + utils.parse_arch_to_seq(x[1]), arch_pool[:100]))
         nao_infer_dataset = utils.NAODataset(top100_archs, None, False)
         nao_infer_queue = torch.utils.data.DataLoader(
             nao_infer_dataset, batch_size=len(nao_infer_dataset), shuffle=False, pin_memory=True)
@@ -817,7 +833,8 @@ def main():
             if predict_step_size > max_step_size:
                 break
 
-        child_arch_pool = list(map(lambda x: utils.parse_seq_to_arch(x), new_archs))  # [[[conv],[reduc]]]
+        child_arch_pool = list(
+            map(lambda x: utils.parse_seq_to_arch(x, args.child_nodes), new_archs))  # [[[conv],[reduc]]]
         logging.info("Generate %d new archs", len(child_arch_pool))
 
     logging.info('Finish Searching')
@@ -839,7 +856,7 @@ def main():
                 arch = ' '.join(map(str, arch[0] + arch[1]))
                 fa.write('{}\n'.format(arch))
                 fp.write('{}\n'.format(perf))
-  
+
 
 if __name__ == '__main__':
     main()
