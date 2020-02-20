@@ -98,7 +98,7 @@ class Decoder(nn.Module):
         else:
             inference = False
         x, batch_size, length = self._validate_args(x, encoder_hidden, encoder_outputs)
-        print('[DEBUG] Length = {}, self.length= {}'.format(length, self.length))
+
         assert length == self.length
         decoder_hidden = self._init_state(encoder_hidden)
         decoder_outputs = []
@@ -165,21 +165,8 @@ class Decoder(nn.Module):
         if x is None:
             x = torch.LongTensor([self.sos_id] * batch_size).view(batch_size, 1).cuda()
             max_length = self.length
-            raise ValueError(
-                '[DEBUG] X is none, initializing with default x = {}, max_length={}, batch_size={}, self.length={}'.format(
-                    x,
-                    max_length,
-                    batch_size,
-                    self.length))
-
         else:
             max_length = x.size(1)
-            raise ValueError(
-                '[DEBUG] X is not none, initializing with default x = {}, max_length={} batch_size={}, self.length={}'.format(
-                    x,
-                    max_length,
-                    batch_size,
-                    self.length))
 
         return x, batch_size, max_length
 

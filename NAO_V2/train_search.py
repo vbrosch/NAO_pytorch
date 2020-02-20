@@ -782,10 +782,12 @@ def main():
                 for src, tgt in zip(encoder_input[:split], encoder_target[:split]):
                     a = np.random.randint(0, args.child_nodes)
                     b = np.random.randint(0, args.child_nodes)
+                    c = args.controller_encoder_length
+
                     src = src[:4 * a] + src[4 * a + 2:4 * a + 4] + \
-                          src[4 * a:4 * a + 2] + src[4 * (a + 1):20 + 4 * b] + \
-                          src[20 + 4 * b + 2:20 + 4 * b + 4] + src[20 + 4 * b:20 + 4 * b + 2] + \
-                          src[20 + 4 * (b + 1):]
+                          src[4 * a:4 * a + 2] + src[4 * (a + 1):c + 4 * b] + \
+                          src[c + 4 * b + 2:c + 4 * b + 4] + src[c + 4 * b:c + 4 * b + 2] + \
+                          src[c + 4 * (b + 1):]
                     train_encoder_input.append(src)
                     train_encoder_target.append(tgt)
         else:
@@ -796,7 +798,8 @@ def main():
         logging.info('Train data: {}\tValid data: {}'.format(len(train_encoder_input), len(valid_encoder_input)))
 
         nao_train_dataset = utils.NAODataset(train_encoder_input, train_encoder_target, True,
-                                             swap=True if args.controller_expand is None else False)
+                                             swap=True if args.controller_expand is None else False,
+                                             encoder_length=args.controller_encoder_length)
         nao_valid_dataset = utils.NAODataset(valid_encoder_input, valid_encoder_target, False)
         nao_train_queue = torch.utils.data.DataLoader(
             nao_train_dataset, batch_size=args.controller_batch_size, shuffle=True, pin_memory=True)
