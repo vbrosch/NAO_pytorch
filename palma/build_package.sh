@@ -1,10 +1,10 @@
 #!/bin/bash
 
-PACKAGE_DIR=package
+PACKAGE_DIR=nao
 
 mkdir -p $PACKAGE_DIR
 
-pip install torch torchvision numpy --target $PACKAGE_DIR
+pip install --upgrade Pillow==5.4.0 torch==1.0.1 torchvision==0.2.2 numpy --target $PACKAGE_DIR
 
 cp ../NAO_V2/*.py $PACKAGE_DIR
 cp ../NAO_V2/*.sh $PACKAGE_DIR
