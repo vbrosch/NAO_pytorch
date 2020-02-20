@@ -165,15 +165,21 @@ class Decoder(nn.Module):
         if x is None:
             x = torch.LongTensor([self.sos_id] * batch_size).view(batch_size, 1).cuda()
             max_length = self.length
-            print('[DEBUG] X is none, initializing with default x = {}, max_length={}, batch_size={}'.format(x,
-                                                                                                             max_length,
-                                                                                                             batch_size))
+            raise ValueError(
+                '[DEBUG] X is none, initializing with default x = {}, max_length={}, batch_size={}, self.length={}'.format(
+                    x,
+                    max_length,
+                    batch_size,
+                    self.length))
 
         else:
             max_length = x.size(1)
-            print('[DEBUG] X is not none, initializing with default x = {}, max_length={} batch_size={}'.format(x,
-                                                                                                                max_length,
-                                                                                                                batch_size))
+            raise ValueError(
+                '[DEBUG] X is not none, initializing with default x = {}, max_length={} batch_size={}, self.length={}'.format(
+                    x,
+                    max_length,
+                    batch_size,
+                    self.length))
 
         return x, batch_size, max_length
 
