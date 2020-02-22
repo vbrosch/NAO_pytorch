@@ -1,3 +1,3 @@
 #!/bin/bash
 
-scp nao_package.tar.gz $1@palma.uni-muenster.de:/home/v/$1
+scp nao_package.tar.gz $1@palma.uni-muenster.de:~/nao_package.tar.gz

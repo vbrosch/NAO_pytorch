@@ -818,7 +818,9 @@ def main():
         max_step_size = 50
         predict_step_size = 0
         top100_archs = list(
-            map(lambda x: utils.parse_arch_to_seq(x[0]) + utils.parse_arch_to_seq(x[1]), arch_pool[:100]))
+            map(lambda x: utils.parse_arch_to_seq(x[0], args.child_nodes) + utils.parse_arch_to_seq(x[1],
+                                                                                                    args.child_nodes),
+                arch_pool[:100]))
         nao_infer_dataset = utils.NAODataset(top100_archs, None, False)
         nao_infer_queue = torch.utils.data.DataLoader(
             nao_infer_dataset, batch_size=len(nao_infer_dataset), shuffle=False, pin_memory=True)
