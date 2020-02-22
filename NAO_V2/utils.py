@@ -518,9 +518,9 @@ def parse_seq_to_arch(seq, nodes=B):
         cell_arch = []
         for i in range(nodes):
             p1 = cell_seq[4 * i] - 1
-            op1 = cell_seq[4 * i + 1] - 7
+            op1 = cell_seq[4 * i + 1] - (nodes + 2)
             p2 = cell_seq[4 * i + 2] - 1
-            op2 = cell_seq[4 * i + 3] - 7
+            op2 = cell_seq[4 * i + 3] - (nodes + 2)
             cell_arch.extend([p1, op1, p2, op2])
         return cell_arch
 

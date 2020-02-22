@@ -578,7 +578,6 @@ def nao_train(train_queue, model, optimizer):
 
         optimizer.zero_grad()
 
-        print('Encoder input: {}, Decoder input: {}'.format(encoder_input.shape, decoder_input.shape))
         predict_value, log_prob, arch = model(encoder_input, decoder_input)
         loss_1 = F.mse_loss(predict_value.squeeze(), encoder_target.squeeze())
         loss_2 = F.nll_loss(log_prob.contiguous().view(-1, log_prob.size(-1)), decoder_target.view(-1))
